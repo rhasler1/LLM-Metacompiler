@@ -5,15 +5,16 @@ import subprocess
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from compiler_tester.src.compiler import compile_program
+from compiler_tester.src.compiler import compile_program, run_program
 
 load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
 
-OUTPUT_LOG = f"{USER_PREFIX}/output_log/output.txt"
+OUTPUT_DIR = f"{USER_PREFIX}/output_log"
 
 valid_benchmarks = [
-    "s11.c"
+    "s11.c",
+    "hello.c"
 ]
 
 
@@ -36,7 +37,10 @@ def master_script(benchmark):
     )
 
     # Compile benchmark w/o LLM-optimizations.
-    compile_program(benchmark, False, OUTPUT_LOG)
+    success_compilation = compile_program(benchmark, False)
+    if success_compilation:
+        # Execute code
+        run_program(f"hello", f"{OUTPUT_DIR}/unvectorized_output.txt", False)
 
     # Send benchmark to LLM ("LLM-Vectorize" benchmark).
     #llm_vectorize(benchmark)
