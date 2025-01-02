@@ -6,6 +6,7 @@ import re
 import subprocess
 load_dotenv()
 
+# Used for testing
 USER_PREFIX = os.getenv('USER_PREFIX')
 OUTPUT_FILE = f"{USER_PREFIX}/benchmarks/TSVC_2/src/test.c"
 
@@ -50,15 +51,75 @@ void time_function(test_function_t vector_func, void * arg_info)
 # Replace with path to libclang.so.
 Config.set_library_file("/usr/lib/llvm-18/lib/libclang.so")
 
+# TODO: COMPLETE
+def parser_script(benchmark_dir, func_name, func_args):
+    src_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/tsvc.c"
+    dest_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark.c"
+    if extract_function(src_path, dest_path, func_name) == -1:
+        return -1
+    
+    # Might need a benchmark.h and benchmark_llm_vec.h
+    header_file_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark.h"
+    if write_benchmark_header(func_name, header_file_path) == -1:
+        return -1
+    
+    # Might need a driver.c and driver_llm_vec.c
+    driver_file_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/driver.c"
+    if write_driver_c(func_name, func_args, driver_file_path) == -1:
+        return -1
+    
+    return 1
+
+
+def write_driver_c(func_name, func_args, driver_file_path):
+    try:
+        driver_code = f'''#include "benchmark.h"
+#include <stdio.h>
+
+int main()
+{{
+    time_function(&{func_name}, {func_args if func_args else 'NULL'});
+    return 0;
+}}
+'''
+        
+        with open(driver_file_path, "w") as driver_file:
+            driver_file.write(driver_code)
+        
+        print(f"Driver code written to: {driver_file_path}")
+        return 1
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return -1
+
+
+def write_benchmark_header(func_name, header_file_path):
+    try:
+        header_code = f'''#include "common.h"
+
+real_t {func_name}(struct args_t * func_args);
+'''
+
+        with open(header_file_path, "w") as header_file:
+            header_file.write(header_code)
+        
+        print(f"Header code written to: {header_file_path}")
+        return 1
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return -1
+
 # Purpose: Parse TSVC_2 benchmark functions.
-def extract_function(file_path, function_name):
+def extract_function(src_path, dest_path, func_name):
     index = Index.create()
     # Parse the file
-    tu = index.parse(file_path)
+    tu = index.parse(src_path)
 
     # Traverse the AST to find the function
     def find_function(node):
-        if node.kind.name == "FUNCTION_DECL" and node.spelling == function_name:
+        if node.kind.name == "FUNCTION_DECL" and node.spelling == func_name:
             return node
         for child in node.get_children():
             result = find_function(child)
@@ -68,30 +129,37 @@ def extract_function(file_path, function_name):
 
     target_function = find_function(tu.cursor)
     if not target_function:
-        print(f"Function '{function_name}' not found in {file_path}.")
+        print(f"Function '{func_name}' not found in {src_path}.")
         return -1
 
     # Extract the function source code
-    with open(file_path, "r") as file:
+    with open(src_path, "r") as file:
         content = file.read()
     start = target_function.extent.start.offset
     end = target_function.extent.end.offset
     function_code = content[start:end]
 
-    print(f"Function '{function_name}' extracted successfully:\n")
+    print(f"Function '{func_name}' extracted successfully:\n")
+        
     function_code = f"{INCLUDES}\n{function_code}\n\n{TIME_FUNCTION}"
     #print(function_code)
 
-    with open(OUTPUT_FILE, "w") as file:
+    with open(dest_path, "w") as file:
         file.write(function_code)
 
     return 1
 
 
 if __name__ == "__main__":
-    print(f"Starting function extraction...")
-    file_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/tsvc.c"
-    extract_function(file_path, "s000")
+    print(f"Testing file parsing script...")
+    benchmark = "s000"
+    func_args = "NULL"
+    parser_script(USER_PREFIX, benchmark, func_args)
+    #print(f"Starting function extraction test...")
+    #src_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/tsvc.c"
+    #dest_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark.c"
+    #extract_function(src_path, dest_path, "s000")
+    #print(f"Function extraction test complete.")
 
 
 # TODO:
