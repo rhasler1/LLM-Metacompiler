@@ -72,6 +72,7 @@ def parser_script(benchmark_dir, func_name, func_args):
 
 
 def write_driver_c(func_name, func_args, driver_file_path):
+    print(f"Attempting to write driver code for benchmark: {func_name}")
     try:
         driver_code = f'''#include "benchmark.h"
 #include <stdio.h>
@@ -86,7 +87,7 @@ int main()
         with open(driver_file_path, "w") as driver_file:
             driver_file.write(driver_code)
         
-        print(f"Driver code written to: {driver_file_path}")
+        print(f"Driver code for {func_name} written to: {driver_file_path}")
         return 1
     
     except Exception as e:
@@ -95,6 +96,7 @@ int main()
 
 
 def write_benchmark_header(func_name, header_file_path):
+    print(f"Attempting to write header file for benchmark {func_name}")
     try:
         header_code = f'''#include "common.h"
 
@@ -104,7 +106,7 @@ real_t {func_name}(struct args_t * func_args);
         with open(header_file_path, "w") as header_file:
             header_file.write(header_code)
         
-        print(f"Header code written to: {header_file_path}")
+        print(f"Header file for benchmark {func_name} written to: {header_file_path}")
         return 1
     
     except Exception as e:
@@ -113,6 +115,7 @@ real_t {func_name}(struct args_t * func_args);
 
 # Purpose: Parse TSVC_2 benchmark functions.
 def extract_function(src_path, dest_path, func_name):
+    print(f"Attempting to extract benchmark function {func_name}")
     index = Index.create()
     # Parse the file
     tu = index.parse(src_path)
@@ -140,10 +143,12 @@ def extract_function(src_path, dest_path, func_name):
     function_code = content[start:end]
 
     print(f"Function '{func_name}' extracted successfully:\n")
-        
+
+    print(f"Adding necessary include(s) and timing function to function code")        
     function_code = f"{INCLUDES}\n{function_code}\n\n{TIME_FUNCTION}"
     #print(function_code)
 
+    print(f"Writing function code to {dest_path}")
     with open(dest_path, "w") as file:
         file.write(function_code)
 

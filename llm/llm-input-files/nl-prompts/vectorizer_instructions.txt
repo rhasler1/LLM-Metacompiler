@@ -1,2 +1,0 @@
-Instructions:
-Vectorize the provided code for an AVX2 target.

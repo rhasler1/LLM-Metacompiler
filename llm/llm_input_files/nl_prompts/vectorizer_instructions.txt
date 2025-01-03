@@ -1,0 +1,12 @@
+Instructions:
+Vectorize the provided code for an AVX2 target.
+The real_t data type is a float (4 bytes).
+64 byte array allignment is used.
+Target 256-bit wide registers.
+Only modify the benchmark function with return type real_t (e.g., real_t s000(...)).
+There are comments within the benchmark function describing depences within the function;
+use these to help with vectorization.
+Retain the unmodified source code in your output, do not add comments.
+Only output code, do not provide natural language explanation of output.
+
+Code:

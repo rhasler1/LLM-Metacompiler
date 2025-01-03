@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 
+from llm import llm_vectorize
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from compiler_tester.src.compiler import compile_program, run_program
 from benchmarks.benchmark_tools.src.file_parser import extract_function, parser_script
@@ -40,19 +41,32 @@ def main_script(benchmark):
         return -1
 
     # 2: Compile check on extracted benchmark
-    if compile_test(PATH_TO_TSVC) == -1:
+    if compile_test(PATH_TO_TSVC, False) == -1:
         return -1
-
-    # 3: Write execution time and checksum to file
-    #if execution_test(PATH_TO_TSVC) == -1:
-    #    return -1
-
-    # 4: If previous (3) are successful, then copy extracted function to llm/input_code
-    # Copy benchmark to ../llm-input-files/input-code/
+    
+    # 3: Execute benchmark
     shutil.copyfile(
         f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark.c",
-        f"{USER_PREFIX}/llm/llm-input-files/input-code/{benchmark.split('.')[0]}_unvectorized.c"
+        f"{USER_PREFIX}/llm/llm_input_files/input_code/{benchmark.split('.')[0]}_unvectorized.c"
     )
+
+    # 4: Vectorize benchmark
+    if llm_vectorize(benchmark, "gpt-4o") == -1:
+        return -1
+    
+    # 5: Copy vectorized benchmark to TSVC
+    shutil.copyfile(
+        f"{USER_PREFIX}/llm/llm_output_files/{benchmark}_vectorized.c",
+        f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark_llm_vec.c"
+    )
+
+    # 6: Compile llm-vectorized. TODO: if compilation fails, re-prompt llm up to k times.
+    if compile_test(PATH_TO_TSVC, True) == -1:
+        return -1
+    
+
+    # 7: Checksum anaylsis. TODO: If chechsum fails, re-prompt llm up to k times.
+
 
     # Compile benchmark w/o LLM-optimizations.
     #success_compilation = compile_program(benchmark, False)

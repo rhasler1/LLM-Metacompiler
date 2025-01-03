@@ -9,15 +9,21 @@ USER_PREFIX = os.getenv('USER_PREFIX')
 #   1. Support more complex make commands.
 #   2. Figure out exactly what those are.
 #
-def compile_test(src_path):
+def compile_test(src_path, vectorized):
     current_path = os.getcwd()
     try:
         # Change cwd to Makefile location.
         os.chdir(src_path)
 
-        # Execute make command and capture output.
+        if vectorized:
+            make_command = "benchmark_llm_vec"
+        else:
+            make_command = "benchmark"
+        
+        print(f"Attempting to execute command make {make_command}")
+        # Execute make command and capture output.            
         result = subprocess.run(
-            ["make"],
+            ["make", make_command],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -41,5 +47,5 @@ def compile_test(src_path):
 if __name__ == "__main__":
     print(f"Starting compilation test...")
     src_path = f"{USER_PREFIX}/benchmarks/TSVC_2"
-    compile_test(src_path)
+    compile_test(src_path, False)
     print(f"Compilation test complete")
