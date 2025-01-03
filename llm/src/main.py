@@ -6,7 +6,6 @@ import sys
 
 from llm import llm_vectorize
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from compiler_tester.src.compiler import compile_program, run_program
 from benchmarks.benchmark_tools.src.file_parser import extract_function, parser_script
 from benchmarks.benchmark_tools.src.compile_checker import compile_test
 

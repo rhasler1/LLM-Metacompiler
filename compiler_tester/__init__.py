@@ -1,1 +1,0 @@
-from .src.compiler import compile_program
