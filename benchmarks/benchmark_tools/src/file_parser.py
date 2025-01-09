@@ -15,7 +15,7 @@ INCLUDES = r"""#include <time.h>
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
-
+#include "benchmark.h"
 #include "common.h"
 #include "array_defs.h"
 
@@ -48,23 +48,20 @@ void time_function(test_function_t vector_func, void * arg_info)
     printf("%10.3f\t%f\n", taken, result);
 }"""
 
-# Replace with path to libclang.so.
+# Needed to parse using clang.
 Config.set_library_file("/usr/lib/llvm-18/lib/libclang.so")
-
-# TODO: COMPLETE
-def parser_script(benchmark_dir, func_name, func_args):
-    src_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/tsvc.c"
-    dest_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark.c"
-    if extract_function(src_path, dest_path, func_name) == -1:
+def parse_script(benchmark_dir, func_name, func_args):
+    src_file_path = f"{benchmark_dir}/src/tsvc.c"
+    dest_file_path = f"{benchmark_dir}/src/benchmark_{func_name}.c"
+    if extract_function(src_file_path, dest_file_path, func_name) == -1:
         return -1
     
-    # Might need a benchmark.h and benchmark_llm_vec.h
-    header_file_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark.h"
+    header_file_path = f"{benchmark_dir}/src/benchmark.h"
     if write_benchmark_header(func_name, header_file_path) == -1:
         return -1
     
     # Might need a driver.c and driver_llm_vec.c
-    driver_file_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/driver.c"
+    driver_file_path = f"{benchmark_dir}/src/driver.c"
     if write_driver_c(func_name, func_args, driver_file_path) == -1:
         return -1
     
@@ -101,6 +98,9 @@ def write_benchmark_header(func_name, header_file_path):
         header_code = f'''#include "common.h"
 
 real_t {func_name}(struct args_t * func_args);
+
+typedef real_t(*test_function_t)(struct args_t *);
+void time_function(test_function_t vector_func, void * arg_info);
 '''
 
         with open(header_file_path, "w") as header_file:
@@ -159,19 +159,4 @@ if __name__ == "__main__":
     print(f"Testing file parsing script...")
     benchmark = "s000"
     func_args = "NULL"
-    parser_script(USER_PREFIX, benchmark, func_args)
-    #print(f"Starting function extraction test...")
-    #src_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/tsvc.c"
-    #dest_path = f"{USER_PREFIX}/benchmarks/TSVC_2/src/benchmark.c"
-    #extract_function(src_path, dest_path, "s000")
-    #print(f"Function extraction test complete.")
-
-
-# TODO:
-#   1. Support dynamic compilation: e.g., Use user defined compiler.
-#   2. I think I will rename with module to compile_tester. Parser will be a sub-module.
-#   3. At the top level (main_script) the user should be able to define the function, k-value, and compiler.
-#       -> Maybe should work on this first.
-#   4. On second thought, maybe it is best to get the pipeline working with default values (s000, 1, GNUs) first.
-#
-#
+    parse_script(f"{USER_PREFIX}/benchmarks/TSVC_2", benchmark, func_args)
