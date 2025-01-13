@@ -1,0 +1,9 @@
+make[1]: Entering directory '/home/ryan/school/LLM-Metacompiler/benchmarks/TSVC_2'
+make[2]: Entering directory '/home/ryan/school/LLM-Metacompiler/benchmarks/TSVC_2/src'
+clang -O3 -mavx2 -fopenmp=libomp -c -o dummy.o dummy.c
+clang -O3 -mavx2 -fopenmp=libomp -c -o common.o common.c
+clang -O3 -mavx2 -fopenmp=libomp -c -o driver.o driver.c
+clang -O3 -mavx2 -fopenmp=libomp -fno-tree-vectorize -c -o s000_llm_vec.o benchmark_s000_llm_vec.c
+clang s000_llm_vec.o dummy.o common.o driver.o -lm -o ../bin/clang/s000_llm_vec
+make[2]: Leaving directory '/home/ryan/school/LLM-Metacompiler/benchmarks/TSVC_2/src'
+make[1]: Leaving directory '/home/ryan/school/LLM-Metacompiler/benchmarks/TSVC_2'
