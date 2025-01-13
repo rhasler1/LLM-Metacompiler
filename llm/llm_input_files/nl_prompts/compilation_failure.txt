@@ -1,0 +1,4 @@
+An error occurred when compiling the vectorized code you provided.
+Using the error message below, fix the vectorized code adhearing to the instructions first provided.
+
+Error:

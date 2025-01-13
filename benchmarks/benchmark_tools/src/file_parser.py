@@ -2,13 +2,17 @@ from dotenv import load_dotenv
 from clang.cindex import Index
 from clang.cindex import Config
 import os
-import re
-import subprocess
-load_dotenv()
 
-# Used for testing
+load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
 OUTPUT_FILE = f"{USER_PREFIX}/benchmarks/TSVC_2/src/test.c"
+
+# Needed for clang parsing.
+config_lib = "/usr/lib/llvm-18/lib/libclang.so"
+try:
+    Config.set_library_file(config_lib)
+except Exception as e:
+    print(f"An error occurred when setting clang.cindex Config library at: {config_lib}")
 
 INCLUDES = r"""#include <time.h>
 #include <stdio.h>
@@ -48,23 +52,18 @@ void time_function(test_function_t vector_func, void * arg_info)
     printf("%10.3f\t%f\n", taken, result);
 }"""
 
-# Needed to parse using clang.
-Config.set_library_file("/usr/lib/llvm-18/lib/libclang.so")
-def parse_script(benchmark_dir, func_name, func_args):
-    src_file_path = f"{benchmark_dir}/src/tsvc.c"
-    dest_file_path = f"{benchmark_dir}/src/benchmark_{func_name}.c"
-    if extract_function(src_file_path, dest_file_path, func_name) == -1:
-        return -1
-    
+def parse_script(benchmark_dir, benchmark, func_args):
+    benchmarks_path = f"{benchmark_dir}/src/tsvc.c"
+    sel_benchmark_path = f"{benchmark_dir}/src/benchmark_{benchmark}.c"
     header_file_path = f"{benchmark_dir}/src/benchmark.h"
-    if write_benchmark_header(func_name, header_file_path) == -1:
-        return -1
-    
-    # Might need a driver.c and driver_llm_vec.c
     driver_file_path = f"{benchmark_dir}/src/driver.c"
-    if write_driver_c(func_name, func_args, driver_file_path) == -1:
+
+    if extract_function(benchmarks_path, sel_benchmark_path, benchmark) == -1:
         return -1
-    
+    if write_benchmark_header(benchmark, header_file_path) == -1:
+        return -1
+    if write_driver_c(benchmark, func_args, driver_file_path) == -1:
+        return -1
     return 1
 
 
@@ -76,6 +75,13 @@ def write_driver_c(func_name, func_args, driver_file_path):
 
 int main()
 {{
+    int n1 = 1;
+    int n3 = 1;
+    int* ip;
+    real_t s1,s2;
+
+    init(&ip, &s1, &s2);
+    
     time_function(&{func_name}, {func_args if func_args else 'NULL'});
     return 0;
 }}
@@ -112,6 +118,7 @@ void time_function(test_function_t vector_func, void * arg_info);
     except Exception as e:
         print(f"An error occurred: {e}")
         return -1
+
 
 # Purpose: Parse TSVC_2 benchmark functions.
 def extract_function(src_path, dest_path, func_name):

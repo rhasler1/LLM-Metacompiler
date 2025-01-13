@@ -6,6 +6,8 @@ load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
 
 def compile_test(benchmark_dir, make_command, compiler, benchmark):
+    compilation_out_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/compilation/{compiler}/{make_command}_{benchmark}.txt"
+
     current_path = os.getcwd()
     try:
         os.chdir(benchmark_dir)
@@ -23,7 +25,6 @@ def compile_test(benchmark_dir, make_command, compiler, benchmark):
     finally:
         os.chdir(current_path)
 
-    compilation_out_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/compilation/{compiler}/{make_command}_{benchmark}.txt"
     if result.returncode == 0:
         print(f"Compilation return successfully. Writing output to: {compilation_out_path}")
         with open(compilation_out_path, "w") as file:

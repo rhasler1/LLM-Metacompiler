@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
 import os
-import re
 import subprocess
+
 load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
 
-# IMPORTANT: Functions were written very quickly as proof of concept. Will need to be rewritten.
+
 def execute_benchmark(executable_path, stdout_dest):
     command = executable_path
     try:
@@ -18,12 +18,42 @@ def execute_benchmark(executable_path, stdout_dest):
 
     except FileNotFoundError as e:
         print(f"Error: {e}")
+        return -1
     except Exception as e:
         print(f"Error: {e}")
+        return -1
     
     with open(stdout_dest, "w") as file:
         file.write(result.stdout)
+    return 1
 
+def generate_benchmark_report(novec_results_path, vec_results_path, llm_vec_results_path):
+    result = ""
+    result1 = "NO VEC:\t"
+    result2 = "VEC:\t"
+    result3 = "LLM VEC:\t"
+    try:
+        with open(novec_results_path, 'r') as file:
+            result1 += file.read()
+            baseline = float(result1.split('\t')[2])
+        with open(vec_results_path, 'r') as file:
+            result2 += file.read()
+            vec = float(result2.split('\t')[2])
+        with open(llm_vec_results_path, 'r') as file:
+            result3 += file.read()
+            llm_vec = float(result3.split('\t')[2])
+        speedup_base = baseline/baseline
+        result1 += f"Speedup = {speedup_base}"
+        speedup_vec = baseline/vec
+        result2 += f"Speedup = {speedup_vec}"
+        speedup_llm_vec = baseline/llm_vec
+        result3 += f"Speedup = {speedup_llm_vec}"
+        result = f"{result1}\n{result2}\n{result3}"
+        print(f"{result}")
+        return result
+    except Exception as e:
+        print(f"An error occurred in function: generate_benchmark_report.\nError: {e}")
+        return None
 
 def compare_checksums(checksum1_path, checksum2_path):
     comparison_results = {}
@@ -51,17 +81,22 @@ def compare_checksums(checksum1_path, checksum2_path):
 
             if checksum1 == checksum2:
                 comparison_results[function] = "Match"
-                print("Match")
+                print(f"Match Checksum1: {checksum1}, Checksum2: {checksum2}")
             else:
-                comparison_results[function] = f"Mismatch (Checksum1: {checksum1}, Checksum2: {checksum2})"
-                print("Mismatch")
+                #comparison_results[function] = f"Mismatch (Checksum1: {checksum1}, Checksum2: {checksum2})"
+                print(f"Mismatch Checksum1: {checksum1}, Checksum2: {checksum2}")
+                return -1
 
     except FileNotFoundError as e:
-        return {"error": f"File not found: {e.filename}"}
+        print(f"Error: File not found: {e.filename}")
+        return -1
+        #return {"error": f"File not found: {e.filename}"}
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Error: {str(e)}")
+        return -1
+        #return {"error": str(e)}
 
-    return comparison_results
+    return 1
 
 if __name__ == "__main__":
     execute_benchmark(f"{USER_PREFIX}/benchmarks/TSVC_2/bin/GNU/benchmark", f"{USER_PREFIX}/benchmarks/benchmark_outs/nollmvec.txt")
