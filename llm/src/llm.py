@@ -107,8 +107,8 @@ def llm_vectorize(benchmark, llm_agent):
         file.write(content)
     return 1
 
-def llm_checksum_failure(benchmark, llm_agent):
-    prompt_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/checksum_failure.txt"
+def llm_checksum_failure(benchmark, llm_agent, prompt_path):
+    #prompt_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/checksum_failure.txt"
     vectorized_code_path = f"{USER_PREFIX}/llm/llm_output_files/{benchmark}_vectorized.c"
 
     with open(prompt_path, "r") as file:

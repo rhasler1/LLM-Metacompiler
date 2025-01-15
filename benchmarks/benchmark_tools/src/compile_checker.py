@@ -29,6 +29,7 @@ def compile_test(benchmark_dir, make_command, compiler, benchmark):
         print(f"Compilation return successfully. Writing output to: {compilation_out_path}")
         with open(compilation_out_path, "w") as file:
             file.write(result.stdout)
+            file.write(result.stderr)
             return 1
     else:
         print(f"Compilation failed. Writing error message to: {compilation_out_path}")

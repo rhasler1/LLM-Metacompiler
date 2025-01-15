@@ -6,7 +6,7 @@ import sys
 from llm import llm_vectorize, llm_compile_failure, llm_checksum_failure, get_llm_memmory, LLMAgent
 from config import valid_models, valid_compilers, valid_benchmarks
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from benchmarks.benchmark_tools.src.file_parser import extract_function, parse_script
+from benchmarks.benchmark_tools.src.file_parser import parse_script
 from benchmarks.benchmark_tools.src.compile_checker import compile_test
 from benchmarks.benchmark_tools.src.checksum import compare_checksums, execute_benchmark, generate_benchmark_report
 
@@ -15,7 +15,6 @@ USER_PREFIX = os.getenv('USER_PREFIX')
 OPENAI_KEY = os.getenv('API_KEY')
 
 PATH_TO_TSVC = f"{USER_PREFIX}/benchmarks/TSVC_2"
-
 MAKE_NOVEC = "build_benchmark_novec"
 MAKE_VEC = "build_benchmark_vec"
 MAKE_LLM_VEC = "build_benchmark_llm_vec"
@@ -32,14 +31,16 @@ def clean_up(file_path):
         print(f"Error deleting file {file_path}: {e}")
 
 
-
-#Results = []
-# TODO: MONDAY
+# TODO:
+#   0. Continue work on report summary.
+#   1. Consolidate paths. In the src code make it more obvious what path is what.
+#   2. Integrate compiler dependency analysis into pipeline.
 #   3. Add report summary to the pipeline. (this can include llm_memmory, compilation messages, etc.)
-#   4. Begin working on README.md.
-#   5. Integrate compiler dependency analysis into pipeline.
 
-# Work on calculating speed-up values
+# TODO:
+#   0. Seems as the for GNU, the vecflags must be used when executing the llm vectorized code (look into this more).
+#   1. Checksums are failing on code that should pass. First add dependency analysis from compiler to prompt, if this still occurs, then look at revising prompts.
+#
 def main_script(benchmark, args, compiler, llm_agent, k_max):
     #1: Extract benchmark from TSVC_2.
     if parse_script(PATH_TO_TSVC, benchmark, args) == -1:
@@ -71,6 +72,12 @@ def main_script(benchmark, args, compiler, llm_agent, k_max):
     if execute_benchmark(vec_compiler_path, vec_compiler_dest) == -1:
         print(f"Failed to execute {benchmark} with compiler vectorization.\nExiting main script")
         return -1
+    # Add compilation output to llm memmory (this output includes vector dependency analysis).
+    compilation_file = f"{USER_PREFIX}/benchmarks/benchmark_outs/compilation/{compiler}/{MAKE_VEC}_{benchmark}.txt"
+    with open(compilation_file, 'r') as file:
+        compilation_out = file.read()
+    llm_msg_temp = f"Here is compilation information from the {compiler} compiler. Use this information to help you vectorize {benchmark}:\n{compilation_out}"
+    llm_agent.add_to_memmory("user", llm_msg_temp)
     
     print(f"Copying: {USER_PREFIX}/benchmarks/TSVC_2/src/benchmark_{benchmark}.c \nto: {USER_PREFIX}/llm/llm_input_files/input_code/{benchmark.split('.')[0]}_unvectorized.c")
     shutil.copyfile(
@@ -95,41 +102,59 @@ def main_script(benchmark, args, compiler, llm_agent, k_max):
         )
 
         #8: Compile llm-vectorized.
-        #compilation_out_path = f"{benchmark_dir}/benchmark_outs/compilation/{compiler}/{make_command}_{benchmark}.txt"
-        if compile_test(PATH_TO_TSVC, MAKE_LLM_VEC, compiler, benchmark) == -1:
-            print(f"Failed to compile {benchmark} from {PATH_TO_TSVC} with {MAKE_VEC} and {compiler}.\nCopying error message to {llm_input_error_path}")
+        compile_status = compile_test(PATH_TO_TSVC, MAKE_LLM_VEC, compiler, benchmark)
+        if compile_status == -1:
+            print(f"Failed to compile {benchmark} from {PATH_TO_TSVC} with {MAKE_LLM_VEC} and {compiler}.\nCopying error message to {llm_input_error_path}")
             shutil.copyfile(
                 compilation_out_path,
                 llm_input_error_path
             )
-            if llm_compile_failure(benchmark, llm_agent, llm_input_error_path) == -1:
+            llm_inference_status = llm_compile_failure(benchmark, llm_agent, llm_input_error_path)
+            if llm_inference_status == -1:
                 print("Error when attempting to revectorize. Exiting main script.")
                 return -1
-            print("Re-attempting to compile.")
-            k += 1
-        
+            else:
+                print("Re-attempting to compile.")
+                k += 1
+                continue
+        else:
+            print("Successful compilation")
+
         #9: Execute llm vectorized benchmark.
-        elif execute_benchmark(f"{PATH_TO_TSVC}/bin/{compiler}/{benchmark}_llm_vec", f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt") == -1:
-            print(f"Exeuction of {benchmark}_llm_vec failed. Attempting to revectorize...")
-            print(f"TODO: implement reprompting for execution failure.\nExiting main script for now.")
-            k += 1
+        execution_status = execute_benchmark(f"{PATH_TO_TSVC}/bin/{compiler}/{benchmark}_llm_vec", f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt")
+        if execution_status == -1:
+            print(f"Exeuction of {benchmark}_llm_vec failed.\nError unhandled, exiting main script.")
             return -1
+        else:
+            print("Successful execution")
         
         #10: Checksum test.
-        elif compare_checksums(baseline_dest, f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt") == -1:
-            print(f"Checksum test failed. Attempting to revectorize...")
-            #print(f"TODO: implement reprompting for checksum failure.\nExiting main script for now.")
-            if llm_checksum_failure(benchmark, llm_agent) == -1:
-                print("Error when attempting to revectorize. Exiting main script.")
+        checksum_status = compare_checksums(baseline_dest, f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt")
+        if checksum_status == -1:
+            print(f"Checksum test failed: Checksum mismatch.")
+            checksum_missmatch_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/checksum_mismatch.txt"
+            llm_inference_status = llm_checksum_failure(benchmark, llm_agent, checksum_missmatch_path)
+            if llm_inference_status == -1:
+                print(f"Unhandled error, exiting main script")
                 return -1
-            print("Re-attempting to compile")
-            k += 1
-        
-        #11: Successful llm vectorization and exit.
+            else:
+                print(f"Successful inference.")
+                k += 1
+                continue
+        elif checksum_status == -2:
+            print(f"Checksum test failed: Execution of vectorized code resulted in segfault")
+            segfault_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/seg_fault.txt"
+            llm_inference_status = llm_checksum_failure(benchmark, llm_agent, segfault_path)
+            if llm_inference_status == -1:
+                print(f"Unhandled error, exiting main script")
+                return -1
+            else:
+                print(f"Successful inference.")
+                k += 1
+                continue
         else:
-            print(f"Compilation and checksum tests passed in {k} attempts.\nExiting main script.")
+            print("Checksum test passed.")
             return 1
-        
     print(f"Failed to llm-vectorize {benchmark} with {compiler} after {k} attempts.\nExiting main script.")
 
 
@@ -166,19 +191,31 @@ if __name__ == "__main__":
         sys.exit(1)
     print(f"Using model: {model}")
 
+    # Set k_max variable
     k_max = 5
+    if len(sys.argv) > 5:
+        temp = int(sys.argv[5])
+        if temp > 100:
+            print(f"Provided k max value is greater than 100, setting to default instead: {k_max}")
+        elif temp < 1:
+            print(f"Provided k max value is less than 1, setting to default instead: {k_max}")
+        else:
+            k_max = temp
+    print(f"k max: {k_max}")
 
     # Instantiating LLMAgent.    
     llm_agent = LLMAgent(model, OPENAI_KEY)
+
     # Starting main script.
-    main_script(benchmark, benchmark_args, compiler, llm_agent, k_max)
+    status = main_script(benchmark, benchmark_args, compiler, llm_agent, k_max)
 
     # Generating reports.
-    get_llm_memmory(llm_agent, benchmark, compiler)
-    novec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_novec.txt"
-    vec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_vec.txt"
-    llm_vec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt"
-    generate_benchmark_report(novec_result_path, vec_result_path, llm_vec_result_path)
+    if status == 1:
+        get_llm_memmory(llm_agent, benchmark, compiler)
+        novec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_novec.txt"
+        vec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_vec.txt"
+        llm_vec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt"
+        generate_benchmark_report(novec_result_path, vec_result_path, llm_vec_result_path)
 
     print(f"All done.")
 

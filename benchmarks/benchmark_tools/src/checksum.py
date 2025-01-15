@@ -5,7 +5,12 @@ import subprocess
 load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
 
-
+#TODO: In the case of a segfault, an error is not reported
+# and nothing is written to file.
+# This needs to be reported to the llm. I am starting to think it
+# best to pass the LLMAgent to these functions and compilation functions
+# in order to add to it's memmory w/o having to write to files.
+# E.g., s115.
 def execute_benchmark(executable_path, stdout_dest):
     command = executable_path
     try:
@@ -15,14 +20,13 @@ def execute_benchmark(executable_path, stdout_dest):
             stderr=subprocess.PIPE,
             text=True
         )
-
     except FileNotFoundError as e:
         print(f"Error: {e}")
         return -1
     except Exception as e:
         print(f"Error: {e}")
         return -1
-    
+
     with open(stdout_dest, "w") as file:
         file.write(result.stdout)
     return 1
@@ -42,12 +46,8 @@ def generate_benchmark_report(novec_results_path, vec_results_path, llm_vec_resu
         with open(llm_vec_results_path, 'r') as file:
             result3 += file.read()
             llm_vec = float(result3.split('\t')[2])
-        speedup_base = baseline/baseline
-        result1 += f"Speedup = {speedup_base}"
-        speedup_vec = baseline/vec
-        result2 += f"Speedup = {speedup_vec}"
-        speedup_llm_vec = baseline/llm_vec
-        result3 += f"Speedup = {speedup_llm_vec}"
+        speedup = vec/llm_vec
+        result3 += f"Speedup = {speedup}"
         result = f"{result1}\n{result2}\n{result3}"
         print(f"{result}")
         return result
@@ -57,7 +57,6 @@ def generate_benchmark_report(novec_results_path, vec_results_path, llm_vec_resu
 
 def compare_checksums(checksum1_path, checksum2_path):
     comparison_results = {}
-
     try:
         # Read and parse the first file
         with open(checksum1_path, 'r') as file1:
@@ -78,10 +77,14 @@ def compare_checksums(checksum1_path, checksum2_path):
         for function in all_functions:
             checksum1 = data1.get(function, None)
             checksum2 = data2.get(function, None)
-
+            # Return 1 for success, -2 for segfault, -1 for non-segfault missmatch.
             if checksum1 == checksum2:
                 comparison_results[function] = "Match"
                 print(f"Match Checksum1: {checksum1}, Checksum2: {checksum2}")
+                return 1
+            elif checksum1 != checksum2 and checksum2 == None:
+                print(f"Mismatch Checksum1: {checksum1}, Checksum2: {checksum2}")
+                return -2
             else:
                 #comparison_results[function] = f"Mismatch (Checksum1: {checksum1}, Checksum2: {checksum2})"
                 print(f"Mismatch Checksum1: {checksum1}, Checksum2: {checksum2}")
@@ -96,7 +99,6 @@ def compare_checksums(checksum1_path, checksum2_path):
         return -1
         #return {"error": str(e)}
 
-    return 1
 
 if __name__ == "__main__":
     execute_benchmark(f"{USER_PREFIX}/benchmarks/TSVC_2/bin/GNU/benchmark", f"{USER_PREFIX}/benchmarks/benchmark_outs/nollmvec.txt")
