@@ -13,8 +13,4 @@ Implement LLM-Vectorizer as described in: https://arxiv.org/pdf/2406.04693
 7. make run s000
 
 ### Execution
-Execution command: make run <benchmark> <compiler> <model> <k_max> 
-s000 clang
-
-s000: function name
-clang: compiler
+Execution command: make run \<benchmark> \<compiler> \<model> \<k_max> 
