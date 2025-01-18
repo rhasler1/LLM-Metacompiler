@@ -34,13 +34,12 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 10 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 10
 
-# Install Clang 19.0.0 and related tools
-RUN apt-get install -y clang-19=1:19.0-0~focal1 \
-                       libclang-19-dev=1:19.0-0~focal1
-
-# Set Clang 19.0.0 as the default version
-RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100 && \
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100
+# Install Clang 19.0.0
+RUN wget https://apt.llvm.org/llvm.sh && \
+    chmod +x llvm.sh && \
+    ./llvm.sh 19 && \
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 10 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 10
 
 # Copy Python dependencies and install them
 COPY requirements.txt .
