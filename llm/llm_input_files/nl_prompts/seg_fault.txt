@@ -1,0 +1,3 @@
+The code you generated successfully compiled, but executing the code resulted in a segfault.
+With this information, please attempt to fix the vectorized code you generated.
+Adhere to the original instructions provided.

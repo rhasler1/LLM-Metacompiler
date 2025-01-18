@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 import shutil
 import sys
+#import argparse
 
 from llm import llm_vectorize, llm_compile_failure, llm_checksum_failure, get_llm_memmory, LLMAgent
 from config import valid_models, valid_compilers, valid_benchmarks
@@ -39,7 +40,11 @@ def clean_up(file_path):
 
 # TODO:
 #   0. Seems as the for GNU, the vecflags must be used when executing the llm vectorized code (look into this more).
-#   1. Checksums are failing on code that should pass. First add dependency analysis from compiler to prompt, if this still occurs, then look at revising prompts.
+#
+#   s278 good example.
+#
+# Add the benchmark directory as an argument. This way in the future we can add more benchmark directories.
+# Also, this will allow me to pass 
 #
 def main_script(benchmark, args, compiler, llm_agent, k_max):
     #1: Extract benchmark from TSVC_2.
@@ -220,6 +225,26 @@ if __name__ == "__main__":
     print(f"All done.")
 
 
+#TODO:
+#   1. Get Docker working. It is paramount I use the compiler versions described in the paper if I want to replicate results.   
+#   Ensure that the paper uses gpt-4o. I believe it claimed to use gpt-4.
+#   
+#   Add a .gen file TSVC_2/src for the benchmarks generated
+#   Add .gitignore
+#   Work on prompts -> Maybe look for papers on this.
+#   Use argparse
+#   move main.py outside of llm directory. Maybe move into a /src directory.
+#   -> A lot of work to do, but it is exciting I am learning a very useful tool in Docker. Also, I am looking to improve modularity,
+#   portability, etc.
+#
+#   Think about how this experiment is beneficial to our goal.
+#   What is it this experiment is doing? Using LLM to write SIMD intrinsics to "vectorize" for loops.
+#   When is this beneficial? When a compiler is unable to vectorize a function because of dependencies, and
+#   the LLM is able to rewrite the code to be vectorizable.
+#
+#   Can also consider generalizing the parsing script, this way we can add more benchmark directories.
+#   Tonight, I think it would be a good idea to re-read the LLM-Vectorizer paper.
+
 
 # Compiler options:
 #   COMPILER        VERSION         VECTORIZED FLAGS                                                        UNVECTORIZED FLAGS
@@ -231,3 +256,4 @@ if __name__ == "__main__":
 #                                   -fslp-vectorize-aggressive -Rpass-analysis=loop-vectorize -lm
 
 #   3. ICC          2021.10.0       -restrict -std=c99 -O3 -ip -vec -xAVX2                                  -restrict -std=c99 -O3 -ip -no-vec 
+# /usr/lib/llvm-19/lib/libclang-19.so.1

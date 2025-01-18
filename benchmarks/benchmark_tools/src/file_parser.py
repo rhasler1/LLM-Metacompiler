@@ -8,7 +8,9 @@ USER_PREFIX = os.getenv('USER_PREFIX')
 OUTPUT_FILE = f"{USER_PREFIX}/benchmarks/TSVC_2/src/test.c"
 
 # Needed for clang parsing.
-config_lib = "/usr/lib/llvm-18/lib/libclang.so"
+#"/usr/lib/llvm-19/lib/libclang-19.so.1"
+#"/usr/lib/llvm-18/lib/libclang.so"
+config_lib = "/usr/lib/llvm-19/lib/libclang-19.so.1"
 try:
     Config.set_library_file(config_lib)
 except Exception as e:
