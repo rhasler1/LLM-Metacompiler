@@ -34,18 +34,6 @@ def clean_up(file_path):
 
 # TODO:
 #   0. Continue work on report summary.
-#   1. Consolidate paths. In the src code make it more obvious what path is what.
-#   2. Integrate compiler dependency analysis into pipeline.
-#   3. Add report summary to the pipeline. (this can include llm_memmory, compilation messages, etc.)
-
-# TODO:
-#   0. Seems as the for GNU, the vecflags must be used when executing the llm vectorized code (look into this more).
-#
-#   s278 good example.
-#
-# Add the benchmark directory as an argument. This way in the future we can add more benchmark directories.
-# Also, this will allow me to pass 
-#
 def main_script(benchmark, args, compiler, llm_agent, k_max):
     #1: Extract benchmark from TSVC_2.
     if parse_script(PATH_TO_TSVC, benchmark, args) == -1:
@@ -226,26 +214,6 @@ if __name__ == "__main__":
 
 
 #TODO:
-#   1. Get Docker working. It is paramount I use the compiler versions described in the paper if I want to replicate results.   
-#   Ensure that the paper uses gpt-4o. I believe it claimed to use gpt-4.
-#   
-#   Add a .gen file TSVC_2/src for the benchmarks generated
-#   Add .gitignore
-#   Work on prompts -> Maybe look for papers on this.
-#   Use argparse
-#   move main.py outside of llm directory. Maybe move into a /src directory.
-#   -> A lot of work to do, but it is exciting I am learning a very useful tool in Docker. Also, I am looking to improve modularity,
-#   portability, etc.
-#
-#   Think about how this experiment is beneficial to our goal.
-#   What is it this experiment is doing? Using LLM to write SIMD intrinsics to "vectorize" for loops.
-#   When is this beneficial? When a compiler is unable to vectorize a function because of dependencies, and
-#   the LLM is able to rewrite the code to be vectorizable.
-#
-#   Can also consider generalizing the parsing script, this way we can add more benchmark directories.
-#   Tonight, I think it would be a good idea to re-read the LLM-Vectorizer paper.
-
-
 # Compiler options:
 #   COMPILER        VERSION         VECTORIZED FLAGS                                                        UNVECTORIZED FLAGS
 #   --------        -------         ------------------                                                      ------------------
