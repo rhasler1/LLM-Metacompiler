@@ -2,9 +2,10 @@ from dotenv import load_dotenv
 import os
 import shutil
 import sys
+from datetime import datetime
 #import argparse
 
-from llm import llm_vectorize, llm_compile_failure, llm_checksum_failure, get_llm_memmory, LLMAgent
+from llm import llm_vectorize, llm_compile_failure, llm_checksum_failure, LLMAgent
 from config import valid_models, valid_compilers, valid_benchmarks
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from benchmarks.benchmark_tools.src.file_parser import parse_script
@@ -20,16 +21,37 @@ MAKE_NOVEC = "build_benchmark_novec"
 MAKE_VEC = "build_benchmark_vec"
 MAKE_LLM_VEC = "build_benchmark_llm_vec"
 
+#class Report:
+#    def __init__(self, benchmark: str, model: str, compiler: str, datetime: str,):
+#        self.title = f"{benchmark} using {model} and {compiler} at {datetime}"
+#        self.report = {}
+#    
+#    def add_to_report(self, section: str, content: str):
+#        if section not in self.report:
+#            self.report[section] = content
+#        else:
+#            self.report[section].append(content)
+#    
+#    def gen_report(self) -> str:
+#        report_str = self.title + "\n"
+#        for section, contents in self.report.items():
+#            report_str += f"## {section} ##\n"
+#            report_str += "\n".join(contents) + "\n\n"
+#        return report_str
+#    
+#    def save_to_file(self, filepath: str):
+#        with open(filepath, "w") as f:
+#            f.write(self.gen_report())
 
-def clean_up(file_path):
-    try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print(f"Deleted: {file_path}")
-        else:
-            print(f"File not found: {file_path}")
-    except Exception as e:
-        print(f"Error deleting file {file_path}: {e}")
+#def build_gen_dir(gen_repo):
+#    if os.path.exists(gen_repo):
+#        print(f"Cleaning up existing {gen_repo} direcotry")
+#        shutil.rmtree(gen_repo)
+#    print(f"{gen_repo} setup complete")
+
+#def cpy_bench_dir(src_repo, gen_repo):
+#    print(f"Copying {src_repo} to {gen_repo}")
+#    shutil.copy(src_repo, gen_repo)
 
 
 # TODO:
@@ -174,7 +196,7 @@ if __name__ == "__main__":
     print(f"Using compiler: {compiler}")
 
     # Set model variable
-    model = "gpt-4o"
+    model = "gpt-4"
     if len(sys.argv) > 4 and sys.argv[4] in valid_models:
         model = sys.argv[4]
     elif len(sys.argv) > 4 and sys.argv[4] not in valid_models:
@@ -199,16 +221,28 @@ if __name__ == "__main__":
     # Instantiating LLMAgent.    
     llm_agent = LLMAgent(model, OPENAI_KEY)
 
+    # Instantiating Report.
+    #now = datetime.now()
+    #date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    #report = Report(benchmark, model, compiler, date_time_str)
+
     # Starting main script.
     status = main_script(benchmark, benchmark_args, compiler, llm_agent, k_max)
 
     # Generating reports.
+    now = datetime.now()
+    date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    report_dest = f"{USER_PREFIX}/reports/{compiler}/{benchmark}_{date_time_str}.txt"
+    with open(report_dest, "w") as f:
+        f.write(llm_agent.format_memmory())
+
     if status == 1:
-        get_llm_memmory(llm_agent, benchmark, compiler)
         novec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_novec.txt"
         vec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_vec.txt"
         llm_vec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt"
-        generate_benchmark_report(novec_result_path, vec_result_path, llm_vec_result_path)
+        result = generate_benchmark_report(novec_result_path, vec_result_path, llm_vec_result_path)
+        with open(report_dest, "a") as f:
+            f.write(result)
 
     print(f"All done.")
 

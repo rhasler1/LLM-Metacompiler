@@ -54,6 +54,14 @@ class LLMAgent:
     def get_memmory(self):
         return self.memmory
     
+    def format_memmory(self):
+        formatted = []
+        for entry in self.memmory:
+            role = entry["role"]
+            content = entry["content"]
+            formatted.append(f"{role}:\n{content}\n{'-'*40}\n")
+        return "".join(formatted)
+    
 
 def llm_compile_failure(benchmark, llm_agent, compilation_error_path):
     prompt_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/compilation_failure.txt"
@@ -126,14 +134,6 @@ def llm_checksum_failure(benchmark, llm_agent, prompt_path):
     with open(vectorized_code_path, "w") as file:
         file.write(content)
     return 1
-
-def get_llm_memmory(llm_agent, benchmark, compiler):
-    report_path = f"{USER_PREFIX}/reports/{compiler}/{benchmark}.txt"
-    if llm_agent.get_memmory() is not None:
-        with open(report_path, "w") as file:
-            file.write(str(llm_agent.get_memmory()))
-        return 1
-    return -1
 
 # TODO:
 if __name__ == "__main__":

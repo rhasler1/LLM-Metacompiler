@@ -5,12 +5,7 @@ import subprocess
 load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
 
-#TODO: In the case of a segfault, an error is not reported
-# and nothing is written to file.
-# This needs to be reported to the llm. I am starting to think it
-# best to pass the LLMAgent to these functions and compilation functions
-# in order to add to it's memmory w/o having to write to files.
-# E.g., s115.
+
 def execute_benchmark(executable_path, stdout_dest):
     command = executable_path
     try:
@@ -39,7 +34,6 @@ def generate_benchmark_report(novec_results_path, vec_results_path, llm_vec_resu
     try:
         with open(novec_results_path, 'r') as file:
             result1 += file.read()
-            baseline = float(result1.split('\t')[2])
         with open(vec_results_path, 'r') as file:
             result2 += file.read()
             vec = float(result2.split('\t')[2])

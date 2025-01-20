@@ -1,5 +1,6 @@
 valid_models = [
-    "gpt-4o"
+    "gpt-4o",
+    "gpt-4"
 ]
 
 valid_compilers = [

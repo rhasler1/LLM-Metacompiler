@@ -5,6 +5,7 @@ load_dotenv()
 
 USER_PREFIX = os.getenv('USER_PREFIX')
 
+
 def compile_test(benchmark_dir, make_command, compiler, benchmark):
     compilation_out_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/compilation/{compiler}/{make_command}_{benchmark}.txt"
 

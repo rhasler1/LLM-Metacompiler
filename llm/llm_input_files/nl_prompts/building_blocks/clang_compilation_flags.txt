@@ -1,2 +1,0 @@
-Only use functions supported by the following clang compiler flags: -O3 -mavx2
-For example, -mfma is NOT included, thus fma instructions should not be used. 
