@@ -3,10 +3,10 @@ valid_models = [
     "gpt-4"
 ]
 
+#TODO: add icpc support.
 valid_compilers = [
     "GNU",
-    "clang",
-    "intel"
+    "clang"
 ]
 
 valid_benchmarks = {

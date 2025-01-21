@@ -54,8 +54,6 @@ MAKE_LLM_VEC = "build_benchmark_llm_vec"
 #    shutil.copy(src_repo, gen_repo)
 
 
-# TODO:
-#   0. Continue work on report summary.
 def main_script(benchmark, args, compiler, llm_agent, k_max):
     #1: Extract benchmark from TSVC_2.
     if parse_script(PATH_TO_TSVC, benchmark, args) == -1:
@@ -108,7 +106,7 @@ def main_script(benchmark, args, compiler, llm_agent, k_max):
     
     compilation_out_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/compilation/{compiler}/{MAKE_LLM_VEC}_{benchmark}.txt"
     llm_input_error_path = f"{USER_PREFIX}/llm/llm_input_files/error_messages/{compiler}_{MAKE_LLM_VEC}_{benchmark}.txt"
-    k = 0
+    global k
     while k < k_max:
         #7: Copy vectorized benchmark to TSVC.
         shutil.copyfile(
@@ -169,6 +167,7 @@ def main_script(benchmark, args, compiler, llm_agent, k_max):
                 continue
         else:
             print("Checksum test passed.")
+            k += 1
             return 1
     print(f"Failed to llm-vectorize {benchmark} with {compiler} after {k} attempts.\nExiting main script.")
 
@@ -185,7 +184,7 @@ if __name__ == "__main__":
     benchmark_args = valid_benchmarks.get(benchmark)
 
     # Set compiler variable
-    compiler = "GNU"
+    compiler = "GNU" # Default
     if len(sys.argv) > 3 and sys.argv[3] in valid_compilers:
         compiler = sys.argv[3]
     elif len(sys.argv) > 3 and sys.argv[3] not in valid_compilers:
@@ -196,7 +195,7 @@ if __name__ == "__main__":
     print(f"Using compiler: {compiler}")
 
     # Set model variable
-    model = "gpt-4"
+    model = "gpt-4" # Default
     if len(sys.argv) > 4 and sys.argv[4] in valid_models:
         model = sys.argv[4]
     elif len(sys.argv) > 4 and sys.argv[4] not in valid_models:
@@ -206,6 +205,10 @@ if __name__ == "__main__":
         sys.exit(1)
     print(f"Using model: {model}")
 
+    # Set k
+    global k
+    k = 0
+    
     # Set k_max variable
     k_max = 5
     if len(sys.argv) > 5:
@@ -242,7 +245,10 @@ if __name__ == "__main__":
         llm_vec_result_path = f"{USER_PREFIX}/benchmarks/benchmark_outs/execution/{compiler}/{benchmark}_llm_vec.txt"
         result = generate_benchmark_report(novec_result_path, vec_result_path, llm_vec_result_path)
         with open(report_dest, "a") as f:
-            f.write(result)
+            f.write(f"Succeeded in LLM-Vectorizing {benchmark} in {k} attempts\nResults:\n{result}")
+    else:
+        with open(report_dest, "a") as f:
+            f.write(f"Failed to LLM-Vectorize {benchmark} in {k} attempts.\nNo benchmark report to generate.")
 
     print(f"All done.")
 
