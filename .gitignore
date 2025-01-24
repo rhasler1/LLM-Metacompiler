@@ -83,3 +83,9 @@ dmypy.json
 *.bak
 *.tmp
 *.temp
+
+reports/
+llm_input_files/
+llm_output_files/
+benchmark_outs/
+TSVC_2/

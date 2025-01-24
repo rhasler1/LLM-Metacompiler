@@ -64,8 +64,8 @@ class LLMAgent:
     
 
 def llm_compile_failure(benchmark, llm_agent, compilation_error_path):
-    prompt_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/compilation_failure.txt"
-    vectorized_code_path = f"{USER_PREFIX}/llm/llm_output_files/{benchmark}_vectorized.c"
+    prompt_path = f"{USER_PREFIX}/prompts/compilation_failure.txt"
+    vectorized_code_path = f"{USER_PREFIX}/generated/TSVC_2/src/benchmark_{benchmark}_llm_vec.c"
 
     with open(prompt_path, "r") as file:
         initial_prompt = file.read()

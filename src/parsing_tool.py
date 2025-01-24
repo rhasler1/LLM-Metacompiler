@@ -72,17 +72,17 @@ def extraction_script(path_to_gen_suite: str, benchmark: str, benchmark_args: st
     - -2: If write_benchmark_header encounters an error.
     - -3: If write_benchmark_driver encounters an error. 
     """
-    if path_to_gen_suite == f"{USER_PREFIX}/generated//TSVC_2":
-        print("MADE IT HERE!")
+
+    if path_to_gen_suite == f"{USER_PREFIX}/generated/TSVC_2":
         main_src_path = f"{path_to_gen_suite}/src/tsvc.c"
-        benchmark_dest = f"{path_to_gen_suite}/src/{benchmark}.c"
+        benchmark_dest = f"{path_to_gen_suite}/src/benchmark_{benchmark}.c"
         header_dest = f"{path_to_gen_suite}/src/benchmark.h"
         driver_dest = f"{path_to_gen_suite}/src/driver.c"
         if extract_benchmark(main_src_path, benchmark_dest, benchmark) == -1:
             return -1
         if write_benchmark_header(benchmark, header_dest) == -1:
             return -2
-        if write_benchmark_driver(benchmark, func_args, driver_dest) == -1:
+        if write_benchmark_driver(benchmark, benchmark_args, driver_dest) == -1:
             return -3
     return 1
 
@@ -201,4 +201,4 @@ if __name__ == "__main__":
     print(f"Testing file parsing script...")
     benchmark = "s000"
     func_args = "NULL"
-    parse_script(f"{USER_PREFIX}/benchmarks/TSVC_2", benchmark, func_args)
+    extraction_script(f"{USER_PREFIX}/benchmarks/TSVC_2", benchmark, func_args)
