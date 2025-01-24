@@ -86,9 +86,9 @@ def llm_compile_failure(benchmark, llm_agent, compilation_error_path):
     return 1
       
 def llm_vectorize(benchmark, llm_agent):
-    benchmark_path = f"{USER_PREFIX}/llm/llm_input_files/input_code/{benchmark}_unvectorized.c"
-    instructions_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/vectorizer_instructions.txt"
-    vectorized_code_path = f"{USER_PREFIX}/llm/llm_output_files/{benchmark}_vectorized.c"
+    benchmark_path = f"{USER_PREFIX}/generated/TSVC_2/src/benchmark_{benchmark}.c"
+    instructions_path = f"{USER_PREFIX}/prompts/vectorizer_instructions.txt"
+    vectorized_code_path = f"{USER_PREFIX}/generated/TSVC_2/src/benchmark_{benchmark}_llm_vec.c"
 
     print(f"Reading code content from {benchmark_path}")
     with open(benchmark_path, "r") as file:
@@ -117,7 +117,7 @@ def llm_vectorize(benchmark, llm_agent):
 
 def llm_checksum_failure(benchmark, llm_agent, prompt_path):
     #prompt_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/checksum_failure.txt"
-    vectorized_code_path = f"{USER_PREFIX}/llm/llm_output_files/{benchmark}_vectorized.c"
+    vectorized_code_path = f"{USER_PREFIX}/generated/TSVC_2/src/benchmark_{benchmark}_llm_vec.c"
 
     with open(prompt_path, "r") as file:
         failure_prompt = file.read()

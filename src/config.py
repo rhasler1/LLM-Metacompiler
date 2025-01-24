@@ -9,6 +9,10 @@ valid_compilers = [
     "clang"
 ]
 
+valid_benchmark_suites = {
+    "TSVC_2",
+}
+
 valid_benchmarks = {
     "s000": "NULL",
     "s162": "&n1",
@@ -32,6 +36,7 @@ valid_benchmarks = {
     "s121": "NULL",
     "s131": "NULL",
     "s241": "NULL",
+    "s291": "NULL",
     "s292": "NULL",
     "s2101": "NULL",
     "s352": "NULL",
