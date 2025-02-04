@@ -38,7 +38,17 @@ def compile_test(benchmark_dir, make_command, compiler, benchmark, compilation_o
 
 
 if __name__ == "__main__":
-    print(f"Starting compilation test...")
-    src_path = f"{USER_PREFIX}/benchmarks/TSVC_2"
-    compile_test(src_path, False)
-    print(f"Compilation test complete")
+    """
+    TODO:
+    """
+
+# Compiler options:
+#   COMPILER        VERSION         VECTORIZED FLAGS                                                        UNVECTORIZED FLAGS
+#   --------        -------         ------------------                                                      ------------------
+#   1. GCC          10.5.0          -W -O3 -mavx2 -lm -ftree-vectorizer-verbose=3                           -O3 -mavx2 -lm
+#                                   -ftree-vectorize -fopt-info-vec-optimized
+#
+#   2. Clang        19.0.0          -O3 -mavx2 -fstrict-aliasing -fvectorize                                -O3 -mavx2 -lm -fno-tree-vectorize
+#                                   -fslp-vectorize-aggressive -Rpass-analysis=loop-vectorize -lm
+
+#   3. ICC          2021.10.0       -restrict -std=c99 -O3 -ip -vec -xAVX2                                  -restrict -std=c99 -O3 -ip -no-vec

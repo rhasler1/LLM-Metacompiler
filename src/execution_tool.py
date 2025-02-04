@@ -7,6 +7,7 @@ USER_PREFIX = os.getenv('USER_PREFIX')
 
 
 def execute_benchmark(executable_path, stdout_dest):
+    print(f"Executing benchmark found at: {executable_path}")
     command = executable_path
     try:
         result = subprocess.run(
@@ -22,9 +23,11 @@ def execute_benchmark(executable_path, stdout_dest):
         print(f"Error: {e}")
         return -1
 
+    print(f"Writing results to {stdout_dest}")
     with open(stdout_dest, "w") as file:
         file.write(result.stdout)
     return 1
+
 
 def generate_benchmark_report(novec_results_path, vec_results_path, llm_vec_results_path):
     result = ""
@@ -48,6 +51,7 @@ def generate_benchmark_report(novec_results_path, vec_results_path, llm_vec_resu
     except Exception as e:
         print(f"An error occurred in function: generate_benchmark_report.\nError: {e}")
         return None
+
 
 def compare_checksums(checksum1_path, checksum2_path):
     comparison_results = {}
@@ -95,6 +99,6 @@ def compare_checksums(checksum1_path, checksum2_path):
 
 
 if __name__ == "__main__":
-    execute_benchmark(f"{USER_PREFIX}/benchmarks/TSVC_2/bin/GNU/benchmark", f"{USER_PREFIX}/benchmarks/benchmark_outs/nollmvec.txt")
-    execute_benchmark(f"{USER_PREFIX}/benchmarks/TSVC_2/bin/GNU/benchmark_llm_vec", f"{USER_PREFIX}/benchmarks/benchmark_outs/llmvec.txt")
-    compare_checksums(f"{USER_PREFIX}/benchmarks/benchmark_outs/nollmvec.txt", f"{USER_PREFIX}/benchmarks/benchmark_outs/llmvec.txt")
+    """
+    TODO:
+    """

@@ -196,9 +196,5 @@ def extract_benchmark(src_path, dest_path, func_name):
 
 if __name__ == "__main__":
     """
-    TODO: Test needs to be re-written.
+    TODO:
     """
-    print(f"Testing file parsing script...")
-    benchmark = "s000"
-    func_args = "NULL"
-    extraction_script(f"{USER_PREFIX}/benchmarks/TSVC_2", benchmark, func_args)

@@ -85,7 +85,7 @@ def llm_compile_failure(benchmark, llm_agent, compilation_error_path):
         file.write(content)
     return 1
       
-def llm_vectorize(benchmark, llm_agent):
+def llm_vectorize(benchmark, llm_agent, instruction_set):
     benchmark_path = f"{USER_PREFIX}/generated/TSVC_2/src/benchmark_{benchmark}.c"
     instructions_path = f"{USER_PREFIX}/prompts/vectorizer_instructions.txt"
     vectorized_code_path = f"{USER_PREFIX}/generated/TSVC_2/src/benchmark_{benchmark}_llm_vec.c"
@@ -97,9 +97,10 @@ def llm_vectorize(benchmark, llm_agent):
     print(f"Reading instructions for LLM from {instructions_path}")
     with open(instructions_path, "r") as file:
         prompt = file.read()
+    updated_prompt = prompt.replace('{instruction_set}', instruction_set)
     
     print(f"Combining nl prompt with benchmark {benchmark} function for model message.")
-    optimize_prompt = f"{prompt}\n{code_content}"
+    optimize_prompt = f"{updated_prompt}\n{code_content}"
 
     #print(f"Adding {optimize_prompt} to LLM memmory.")
     llm_agent.add_to_memmory("user", optimize_prompt)
@@ -137,8 +138,6 @@ def llm_checksum_failure(benchmark, llm_agent, prompt_path):
 
 # TODO:
 if __name__ == "__main__":
-    benchmark = "s000"
-    model = "gpt-4o"
-    llm_agent = LLMAgent(model, OPENAI_KEY)
-    llm_vectorize(benchmark, llm_agent)
-    print(f"{str(llm_agent.get_memmory)}")
+    """
+    TODO:
+    """

@@ -1,16 +1,20 @@
+valid_instruction_sets = [
+    "AVX2",
+    "NEON"
+]
+
 valid_models = [
     "gpt-4o",
     "gpt-4"
 ]
 
-#TODO: add icpc support.
 valid_compilers = [
     "GNU",
     "clang"
 ]
 
 valid_benchmark_suites = {
-    "TSVC_2",
+    "TSVC_2"
 }
 
 valid_benchmarks = {
