@@ -1,0 +1,91 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environments
+.env/
+.venv/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+# Usually, PyInstaller creates a folder named `build/` and `dist/`,
+# containing the compiled files and executables.
+# This can be customized, though.
+build/
+dist/
+
+# Unit test / coverage reports
+.coverage
+.tox/
+.nox/
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# dotenv
+.env
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# pyre
+.pyre/
+
+# profiling data
+.prof
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite3
+
+# Generated files
+*.bak
+*.tmp
+*.temp
+
+reports/
+llm_input_files/
+llm_output_files/
+benchmark_outs/
+TSVC_2/

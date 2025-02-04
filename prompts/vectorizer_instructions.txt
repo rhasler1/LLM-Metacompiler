@@ -1,0 +1,9 @@
+Instructions:
+1. Vectorize the provided code for an {instruction_set} target with 64-byte aligned arrays.
+2. Target 256-bit wide registers and use only functions compatible with the following compiler flags: -O3 -mavx2. Avoid unsupported instructions like fused multiply-add (FMA).
+3. Only modify the benchmark function with return type `real_t`. The real_t data type is a float (4 bytes). Use comments within the function to help identify dependencies.
+4. Eliminate the dependencies described by the remarks from compilation information.
+5. **Do not include any natural language explanations, comments, or extraneous text in the output. Only output the complete, standalone modified code.**
+6. Preserve the original code structure and formatting style, keeping the unmodified code sections intact.
+
+Baseline Unvectorized Code:
