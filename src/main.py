@@ -6,11 +6,12 @@ from datetime import datetime
 import argparse
 
 from llm import llm_vectorize, llm_compile_failure, llm_checksum_failure, LLMAgent
+from benchmark import BenchmarkSuite, TSVC2Suite
 from config import valid_models, valid_compilers, valid_benchmarks, valid_benchmark_suites, valid_instruction_sets 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from parsing_tool import extraction_script
-from compilation_tool import compile_test
-from execution_tool import compare_checksums, execute_benchmark, generate_benchmark_report
+from compilation_tool import compilation_tool
+from execution_tool import compare_checksums, execution_tool, generate_benchmark_report
 
 load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
@@ -22,17 +23,6 @@ MAKE_LLM_VEC = "build_benchmark_llm_vec"
 
 
 def build_dir(dir_path: str):
-    """
-    The build_dir function attempts to build a specified directory. Before performing the
-    build it checks for the directory's existence.
-
-    Parameters:
-    - dir_path (str): the path to the directory to be built.
-
-    Return Values:
-    -  1: Directory did not previously exist and was built.
-    - -1: Directory exists and nothing is built.
-    """
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
         print(f"Built directory: {dir_path}")
@@ -44,14 +34,6 @@ def build_dir(dir_path: str):
 
 def tear_down_dir(dir_path: str):
     """
-    The tear_down_dir function attempts to delete a specified directory and all its contents.
-    Before performing the deletion, it checks for the directory's existence, confirms it is
-    a directory, and prompts the user for explicit confirmation. It returns specific status
-    codes to indicate the outcome.
-
-    Parameters:
-    - dir_path (str): the path to the directory to be deleted.
-
     Return Values:
     - -1: The specified path does not exist.
     - -2: The specified path exists but is not a directory.
@@ -116,70 +98,42 @@ def copy_suite_to_gen(suite_path, gen_path):
         return -3
 
 
-def main_script(path_to_gen: str, suite: str, benchmark: str, benchmark_args: str, instruction_set: str, compiler: str, llm_agent: LLMAgent, k_max: int):
-    """
-    This is the main script of LLM-Metacompiler.
+def main_script(benchmark_obj: BenchmarkSuite, llm_agent: LLMAgent, k_max: int):
 
-    Parameters:
-    - path_to_gen (str):    The path to the gen directory.
-    - suite (str):          Name of benchmark suite.
-    - benchmark (str):      The benchmark function to "metacompile".
-    - benchmark_args (str): The arguments to the benchmark function.
-    - compiler (str):       The compiler to use.
-    - llm_agent: LLMAgent:  The LLM agent/assistant to use.
-    - k_max:                The maximum number of inferences.
-    """
-    # Inits: Paths
-    path_to_gen_suite = f"{path_to_gen}/{suite}"
-    novec_comp_dest = f"{path_to_gen_suite}/compilation/{compiler}/{MAKE_NOVEC}_{benchmark}.txt"
-    novec_path = f"{path_to_gen_suite}/bin/{compiler}/{benchmark}_novec"
-    novec_dest = f"{path_to_gen_suite}/execution/{compiler}/{benchmark}_novec.txt"
-    vec_comp_dest = f"{path_to_gen_suite}/compilation/{compiler}/{MAKE_VEC}_{benchmark}.txt"
-    vec_path = f"{path_to_gen_suite}/bin/{compiler}/{benchmark}_vec"
-    vec_dest = f"{path_to_gen_suite}/execution/{compiler}/{benchmark}_vec.txt"
-    llm_vec_comp_dest = f"{path_to_gen_suite}/compilation/{compiler}/{MAKE_LLM_VEC}_{benchmark}.txt"
-    llm_vec_path = f"{path_to_gen_suite}/bin/{compiler}/{benchmark}_llm_vec"
-    llm_vec_dest = f"{path_to_gen_suite}/execution/{compiler}/{benchmark}_llm_vec.txt"
+    # Prompt paths
     checksum_missmatch_path = f"{USER_PREFIX}/prompts/checksum_mismatch.txt"
     segfault_path = f"{USER_PREFIX}/prompts/seg_fault.txt"
 
-    #0: Setup--building compilation & execution result directories.
-    build_dir(f"{path_to_gen_suite}/compilation/{compiler}")
-    build_dir(f"{path_to_gen_suite}/execution/{compiler}")
+    #1:Init benchmark
+    if benchmark_obj.init_benchmark() != 1:
+        print(f"Failed to initialize benchmark: {benchmark_obj.benchmark} from {benchmark_obj.benchmark_suite}")
+        return -1
+    
+    #2:Compile & Execute NOVEC
+    if benchmark_obj.compile_benchmark(MAKE_NOVEC) != 1:
+        print(f"Failed to compile benchmark: {benchmark_obj.benchmark} from: {benchmark_obj.benchmark_suite} using compilation type: {MAKE_NOVEC}")
+        return -1
+    if benchmark_obj.execute_benchmark("novec") != 1:
+        print(f"Failed to execute benchmark baseline, exiting script.")
+        return -1
+    
+    #3: Compile & Execute VEC
+    if benchmark_obj.compile_benchmark(MAKE_VEC) != 1:
+        print(f"Failed to compile benchmark: {benchmark_obj.benchmark} from: {benchmark_obj.benchmark_suite} using compilation type: {MAKE_VEC}")
+        return -1
+    if benchmark_obj.execute_benchmark("vec") != 1:
+        print(f"Failed to execute benchmark baseline, exiting script.")
+        return -1
 
-    #1: Extract benchmark from suite.
-    if extraction_script(path_to_gen_suite, benchmark, benchmark_args) != 1:
-        print(f"Failed to parse {benchmark} from {path_to_gen_suite}.\nExiting main script.")
-        return -1
     
-    #2: Compile benchmark without vectorization flags.
-    if compile_test(path_to_gen_suite, MAKE_NOVEC, compiler, benchmark, novec_comp_dest) == -1:
-        print(f"Failed to compile {benchmark} from {path_to_gen_suite} with {MAKE_NOVEC} and {compiler}.\nExiting main script.")
-        return -1
-    
-    #3: Execute baseline (novec). 
-    if execute_benchmark(novec_path, novec_dest) == -1:
-        print(f"Failed to execute {benchmark} with novec.\nExiting main script.")
-        return -1
-
-    #4: Compile benchmark with vectorization flags.
-    if compile_test(path_to_gen_suite, MAKE_VEC, compiler, benchmark, vec_comp_dest) == -1:
-        print(f"Failed to compile {benchmark} from {path_to_gen_suite} with {MAKE_VEC} and {compiler}.\nExiting main script.")
-        return -1
-    
-    #5: Execute compiler vectorized code (vec).
-    if execute_benchmark(vec_path, vec_dest) == -1:
-        print(f"Failed to execute {benchmark} with compiler vectorization.\nExiting main script.")
-        return -1
-    
-    # Add compilation output to llm memmory (this output includes vector dependency analysis).
-    with open(vec_comp_dest, 'r') as file:
+    # Add compilation output to llm memory (this output includes vector dependency analysis).
+    with open(benchmark_obj.comp_dest(MAKE_VEC), 'r') as file:
         compilation_out = file.read()
-    llm_msg_temp = f"Here is compilation information from the {compiler} compiler. Use this information to help you vectorize {benchmark}:\n{compilation_out}"
-    llm_agent.add_to_memmory("user", llm_msg_temp)
+    llm_msg_temp = f"Here is compilation information from the {benchmark_obj.compiler} compiler. Use this information to help you vectorize {benchmark_obj.benchmark}:\n{compilation_out}"
+    llm_agent.add_to_memory("user", llm_msg_temp)
 
     #6: Vectorize benchmark. Note: llm_vectorize only returns -1 if there is some sort of communication error with the llm.
-    if llm_vectorize(benchmark, llm_agent, instruction_set) == -1:
+    if llm_vectorize(benchmark_obj.benchmark, llm_agent, instruction_set) == -1:
             print(f"Exiting script.")
             return -1
     
@@ -187,10 +141,10 @@ def main_script(path_to_gen: str, suite: str, benchmark: str, benchmark_args: st
     # Feedback loop
     while k < k_max:
         #8: Compile llm-vectorized.
-        compile_status = compile_test(path_to_gen_suite, MAKE_LLM_VEC, compiler, benchmark, llm_vec_comp_dest)
+        compile_status = benchmark_obj.compile_benchmark(MAKE_LLM_VEC)
         if compile_status == -1:
-            print(f"Failed to compile {benchmark} from {path_to_gen_suite} with {MAKE_LLM_VEC} and {compiler}.")
-            llm_inference_status = llm_compile_failure(benchmark, llm_agent, llm_vec_comp_dest)
+            print(f"Failed to compile {benchmark_obj.benchmark} from {benchmark_obj.benchmark_suite} with {MAKE_LLM_VEC}.")
+            llm_inference_status = llm_compile_failure(benchmark, llm_agent, benchmark_obj.comp_dest(MAKE_LLM_VEC))
             if llm_inference_status == -1:
                 print("Error when attempting to revectorize. Exiting main script.")
                 return -1
@@ -202,15 +156,15 @@ def main_script(path_to_gen: str, suite: str, benchmark: str, benchmark_args: st
             print("Successful compilation")
 
         #9: Execute llm vectorized benchmark.
-        execution_status = execute_benchmark(llm_vec_path, llm_vec_dest)
+        execution_status = benchmark_obj.execute_benchmark("llm_vec")
         if execution_status == -1:
-            print(f"Exeuction of {benchmark}_llm_vec failed.\nError unhandled, exiting main script.")
+            print(f"Exeuction of {benchmark_obj.benchmark}_llm_vec failed.\nError unhandled, exiting main script.")
             return -1
         else:
             print("Successful execution")
         
         #10: Checksum test.
-        checksum_status = compare_checksums(novec_dest, llm_vec_dest)
+        checksum_status = compare_checksums(benchmark_obj.exec_dest("novec"), benchmark_obj.exec_dest("llm_vec"))
         if checksum_status == -1:
             print(f"Checksum test failed: Checksum mismatch.")
             llm_inference_status = llm_checksum_failure(benchmark, llm_agent, checksum_missmatch_path)
@@ -329,19 +283,30 @@ if __name__ == "__main__":
 
     # Inits
     benchmark_args = valid_benchmarks.get(benchmark) # Arguments to the benchmark function. E.g., s000(Null).
+
+    # Creating Benchmark Object
+    if suite == "TSVC_2":
+        print(f"Building benchmark object for {suite}")
+        benchmark_obj = TSVC2Suite(benchmark, benchmark_args, instruction_set, compiler)
+    
+    #0: Setup--building compilation & execution result directories.
+    build_dir(f"{benchmark_obj.PATH_TO_GEN_SUITE}/compilation/{compiler}")
+    build_dir(f"{benchmark_obj.PATH_TO_GEN_SUITE}/execution/{compiler}")
+
+    # Creating LLM Object
     llm_agent = LLMAgent(model, OPENAI_KEY) # Initializing LLMAgent.
     global k # `k` tracks the number of inferences made.
     k = 0
 
     # Starting main script.
-    status = main_script(path_to_gen, suite, benchmark, benchmark_args, instruction_set, compiler, llm_agent, k_max)
+    status = main_script(benchmark_obj, llm_agent, k_max)
 
     # Generating reports.
     now = datetime.now()
     date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
     report_dest = f"{USER_PREFIX}/reports/{compiler}/{benchmark}_{date_time_str}.txt"
     with open(report_dest, "w") as f:
-        f.write(llm_agent.format_memmory())
+        f.write(llm_agent.format_memory())
     if status == 1:
         novec_result_path = f"{USER_PREFIX}/generated/{suite}/execution/{compiler}/{benchmark}_novec.txt"
         vec_result_path = f"{USER_PREFIX}/generated/{suite}/execution/{compiler}/{benchmark}_vec.txt"
@@ -354,6 +319,6 @@ if __name__ == "__main__":
             f.write(f"Failed to LLM-Vectorize {benchmark} in {k} attempts.\nNo benchmark report to generate.")
 
     # Tearing down generate dir.
-    tear_down_dir(path_to_gen)
+    tear_down_dir(benchmark_obj.PATH_TO_GEN)
 
     print(f"All done.")

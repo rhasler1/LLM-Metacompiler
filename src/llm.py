@@ -13,32 +13,32 @@ class LLMAgent:
         if not model:
             raise ValueError("A model must be specified when creating a LLM Agent.")
         self.model = model
-        self.memmory = [{"role": "system", "content": system_message}]
+        self.memory = [{"role": "system", "content": system_message}]
         try:
             print(f"Creating client.")
             self.client = OpenAI(api_key=key)
         except Exception as e:
             print(f"Failed to create client.")
     
-    def add_to_memmory(self, role, content):
-        self.memmory.append({"role": role, "content": content})
+    def add_to_memory(self, role, content):
+        self.memory.append({"role": role, "content": content})
     
     def generate_response(self):
         try:
             response = self.client.chat.completions.create(
                 model = self.model,
-                messages = self.memmory
+                messages = self.memory
             )
         except Exception as e:
             print(f"Error when generating response: {e}")
             return -1
         content = response.choices[0].message.content
-        self.add_to_memmory("assistant", content)
+        self.add_to_memory("assistant", content)
         return 1
     
     def get_last_msg(self):
-        if self.memmory:
-            return self.memmory[-1]
+        if self.memory:
+            return self.memory[-1]
         return None
     
     def clean_msg_content(self, message):
@@ -51,12 +51,12 @@ class LLMAgent:
             content = content.rsplit("\n", 1)[0]
         return content
     
-    def get_memmory(self):
-        return self.memmory
+    def get_memory(self):
+        return self.memory
     
-    def format_memmory(self):
+    def format_memory(self):
         formatted = []
-        for entry in self.memmory:
+        for entry in self.memory:
             role = entry["role"]
             content = entry["content"]
             formatted.append(f"{role}:\n{content}\n{'-'*40}\n")
@@ -71,9 +71,9 @@ def llm_compile_failure(benchmark, llm_agent, compilation_error_path):
         initial_prompt = file.read()
     with open(compilation_error_path, "r") as file:
         error_msg = file.read()
-    error_prompt = f"{initial_prompt}\n{error_msg}"
+    updated_prompt = initial_prompt.replace('{error_message}', error_msg)
 
-    llm_agent.add_to_memmory("user", error_prompt)
+    llm_agent.add_to_memory("user", updated_prompt)
     llm_agent.generate_response()
     if llm_agent.get_last_msg() is not None:
         content = llm_agent.clean_msg_content(llm_agent.get_last_msg())
@@ -102,8 +102,8 @@ def llm_vectorize(benchmark, llm_agent, instruction_set):
     print(f"Combining nl prompt with benchmark {benchmark} function for model message.")
     optimize_prompt = f"{updated_prompt}\n{code_content}"
 
-    #print(f"Adding {optimize_prompt} to LLM memmory.")
-    llm_agent.add_to_memmory("user", optimize_prompt)
+    #print(f"Adding {optimize_prompt} to LLM memory.")
+    llm_agent.add_to_memory("user", optimize_prompt)
     print(f"Inferencing with LLM.")
     llm_agent.generate_response()
     if llm_agent.get_last_msg() is not None:
@@ -116,6 +116,7 @@ def llm_vectorize(benchmark, llm_agent, instruction_set):
         file.write(content)
     return 1
 
+# TODO:Branch if segfault vs mismatch
 def llm_checksum_failure(benchmark, llm_agent, prompt_path):
     #prompt_path = f"{USER_PREFIX}/llm/llm_input_files/nl_prompts/checksum_failure.txt"
     vectorized_code_path = f"{USER_PREFIX}/generated/TSVC_2/src/benchmark_{benchmark}_llm_vec.c"
@@ -123,8 +124,10 @@ def llm_checksum_failure(benchmark, llm_agent, prompt_path):
     with open(prompt_path, "r") as file:
         failure_prompt = file.read()
 
+    #if segault != true: updated_prompt = failure_prompt.replace('checksum_mismatch', checksum_mismatch)
+
     prompt = f"{failure_prompt}"
-    llm_agent.add_to_memmory("user", prompt)
+    llm_agent.add_to_memory("user", prompt)
     llm_agent.generate_response()
     if llm_agent.get_last_msg() is not None:
         content = llm_agent.clean_msg_content(llm_agent.get_last_msg())

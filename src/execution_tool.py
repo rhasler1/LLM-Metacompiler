@@ -6,7 +6,7 @@ load_dotenv()
 USER_PREFIX = os.getenv('USER_PREFIX')
 
 
-def execute_benchmark(executable_path, stdout_dest):
+def execution_tool(executable_path, stdout_dest):
     print(f"Executing benchmark found at: {executable_path}")
     command = executable_path
     try:
@@ -86,7 +86,7 @@ def compare_checksums(checksum1_path, checksum2_path):
             else:
                 #comparison_results[function] = f"Mismatch (Checksum1: {checksum1}, Checksum2: {checksum2})"
                 print(f"Mismatch Checksum1: {checksum1}, Checksum2: {checksum2}")
-                return -1
+                return float(checksum1)-float(checksum2)
 
     except FileNotFoundError as e:
         print(f"Error: File not found: {e.filename}")
